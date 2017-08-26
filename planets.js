@@ -46,6 +46,8 @@ class Vector {
     }
 }
 
+let VECTOR_ZERO = new Vector(0, 0);
+
 
 function fillCircle(ctx, x, y, r, color) {
     ctx.beginPath();
@@ -69,8 +71,8 @@ class Body {
         this.force = new Vector(0, 0);
     }
 
-    tick(force) {
-        let a = force.scale(1 / this.mass);
+    step() {
+        let a = this.force.scale(1 / this.mass);
         this.vel = this.vel.add(a.scale(DT));
         this.pos = this.pos.add(this.vel.scale(DT));
     }
@@ -80,6 +82,8 @@ class Body {
     }
 }
 
+
+// Call a callback on each pair of items in the list.
 function pairs(list, cb) {
     for (let i = 0; i < list.length; ++i) {
         for (let j = i + 1; j < list.length; ++j) {
@@ -88,39 +92,39 @@ function pairs(list, cb) {
     }
 }
 
-function tick(ctx, bodies) {
-    // for each body, calculate force vector based on the other bodies
-    // calculate acceleration based on force and mass
-    // v += a * dt
-    // p += v * dt
-    //
-    // two bodies for now
-    let b1 = bodies[0];
-    let b2 = bodies[1];
 
+// Perform a step of the simulation.
+function step(ctx, bodies) {
+    // Reset force on each body.
+    bodies.forEach(body => {
+        body.force = VECTOR_ZERO;
+    });
+
+    // Calculate new gravitational forces.
     pairs(bodies, (a, b) => {
+        let del = a.pos.subtract(b.pos);
+        let dist = del.magnitude();
+        let dir = del.unit();
+
+        // Don't let bodies get too close.
+        let min_dist = (a.radius + b.radius) * 2;
+        if (dist < min_dist) {
+            dist = min_dist;
+        }
+
+        // Force of gravity.
+        let F = dir.scale(-G * a.mass * b.mass / dist);
+
+        a.force = a.force.add(F);
+        b.force = b.force.add(F.negate());
 
     });
 
-    let del = b1.pos.subtract(b2.pos);
-    let dist = del.magnitude();
-    let dir = del.unit();
-
-    // Don't let bodies get too close.
-    let min_dist = (b1.radius + b2.radius) * 2;
-    if (dist < min_dist) {
-        dist = min_dist;
-    }
-
-    // Force of gravity.
-    let F = dir.scale(-G * b1.mass * b2.mass / dist);
-
-    b1.tick(F);
-    b2.tick(F.negate());
-
-    // Drawing.
     ctx.clearRect(0, 0, 500, 500);
+
+    // Update positions and velocities, and draw.
     bodies.forEach(body => {
+        body.step();
         body.draw(ctx);
     });
 }
@@ -145,7 +149,7 @@ function main() {
     let bodies = [one, two];
 
     // Start the simulation.
-    let interval = setInterval(tick.bind(null, ctx, bodies), DT * 1000);
+    let interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
 
     // Stop the simulation eventually.
     setTimeout(stop.bind(null, interval), DURATION * 1000);
