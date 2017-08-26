@@ -46,6 +46,7 @@ class Vector {
     }
 }
 
+
 let VECTOR_ZERO = new Vector(0, 0);
 
 
@@ -129,10 +130,12 @@ function step(ctx, bodies) {
     });
 }
 
+
 function stop(interval) {
     console.log('Stopping execution.');
     clearInterval(interval);
 }
+
 
 function main() {
     let canvas = document.getElementById('gameCanvas');
@@ -146,7 +149,11 @@ function main() {
     two.init(new Vector(400, 400),
              new Vector(-20, 0));
 
-    let bodies = [one, two];
+    let three = new Body('three', 10, 10, 'green');
+    three.init(new Vector(400, 100),
+               new Vector(-5, 5));
+
+    let bodies = [one, two, three];
 
     // Start the simulation.
     let interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
