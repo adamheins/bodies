@@ -28,8 +28,12 @@ class Vector {
         return this.scale(-1);
     }
 
+    square() {
+        return this.x * this.x + this.y * this.y;
+    }
+
     magnitude() {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
+        return Math.sqrt(this.square());
     }
 
     // fromPolar(mag, angle) {
@@ -41,8 +45,15 @@ class Vector {
         return new Vector(this.x / mag, this.y / mag);
     }
 
-    str() {
-        return '(x=' + this.x + ' , y=' + this.y + ')';
+    dot(other) {
+        return this.x * other.x + this.y * other.y;
+    }
+
+    // String representation of the vector.
+    str(num_decimal_places = 2) {
+        let x = this.x.toFixed(num_decimal_places);
+        let y = this.y.toFixed(num_decimal_places);
+        return '(' + x + ', ' + y + ')';
     }
 }
 
@@ -50,6 +61,7 @@ class Vector {
 let VECTOR_ZERO = new Vector(0, 0);
 
 
+// Convenience function for drawing a filled circle.
 function fillCircle(ctx, x, y, r, color) {
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI, false);
@@ -76,6 +88,16 @@ class Body {
         let a = this.force.scale(1 / this.mass);
         this.vel = this.vel.add(a.scale(DT));
         this.pos = this.pos.add(this.vel.scale(DT));
+    }
+
+    // Returns a new velocity.
+    collide(other) {
+        let m = 2 * other.mass / (this.mass + other.mass);
+        let dx = this.pos.subtract(other.pos);
+        let dx2 = dx.square();
+        let dv = this.vel.subtract(other.vel);
+
+        return this.vel.subtract(dx.scale(m * dv.dot(dx) / dx2));
     }
 
     draw(ctx) {
@@ -108,17 +130,23 @@ function step(ctx, bodies) {
         let dir = del.unit();
 
         // Don't let bodies get too close.
-        let min_dist = (a.radius + b.radius) * 2;
+        let min_dist = a.radius + b.radius;
         if (dist < min_dist) {
-            dist = min_dist;
+            // Collision!
+            let va = a.collide(b);
+            let vb = b.collide(a);
+
+            a.vel = va;
+            b.vel = vb;
+
+            // dist = min_dist;
+        } else {
+            // Force of gravity.
+            let F = dir.scale(-G * a.mass * b.mass / dist);
+
+            a.force = a.force.add(F);
+            b.force = b.force.add(F.negate());
         }
-
-        // Force of gravity.
-        let F = dir.scale(-G * a.mass * b.mass / dist);
-
-        a.force = a.force.add(F);
-        b.force = b.force.add(F.negate());
-
     });
 
     ctx.clearRect(0, 0, 500, 500);
@@ -128,12 +156,6 @@ function step(ctx, bodies) {
         body.step();
         body.draw(ctx);
     });
-}
-
-
-function stop(interval) {
-    console.log('Stopping execution.');
-    clearInterval(interval);
 }
 
 
@@ -158,8 +180,17 @@ function main() {
     // Start the simulation.
     let interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
 
-    // Stop the simulation eventually.
-    setTimeout(stop.bind(null, interval), DURATION * 1000);
+    let paused = false;
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+        if (paused) {
+            console.log('Unpaused.');
+            interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
+        } else {
+            console.log('Paused.');
+            clearInterval(interval);
+        }
+        paused = !paused;
+    }, false);
 }
 
 
