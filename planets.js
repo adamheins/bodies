@@ -79,15 +79,18 @@ class Body {
     }
 
     init(pos, vel) {
+        this.path = [pos]; // Store all past and current positions here.
         this.pos = pos;
         this.vel = vel;
         this.force = new Vector(0, 0);
     }
 
+    // Update velocity and position in response to a force.
     step() {
         let a = this.force.scale(1 / this.mass);
         this.vel = this.vel.add(a.scale(DT));
         this.pos = this.pos.add(this.vel.scale(DT));
+        this.path.push(this.pos);
     }
 
     // Returns a new velocity.
@@ -102,6 +105,16 @@ class Body {
 
     draw(ctx) {
         fillCircle(ctx, this.pos.x, this.pos.y, this.radius, this.color);
+    }
+
+    drawPath(ctx) {
+        ctx.beginPath();
+        ctx.moveTo(this.path[0].x, this.path[0].y);
+        this.path.slice(1).forEach(pos => {
+            ctx.lineTo(pos.x, pos.y);
+        });
+        ctx.strokeStyle = this.color;
+        ctx.stroke();
     }
 }
 
@@ -120,6 +133,7 @@ function render(ctx, bodies) {
     ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
     bodies.forEach(body => {
         body.draw(ctx);
+        body.drawPath(ctx);
     });
 }
 
@@ -193,12 +207,13 @@ function main() {
     let paused = false;
 
     // Pause button.
-    document.getElementById('pauseBtn').addEventListener('click', () => {
+    let pauseBtn = document.getElementById('pauseBtn');
+    pauseBtn.addEventListener('click', () => {
         if (paused) {
-            console.log('Unpaused.');
+            pauseBtn.innerHTML = 'Pause';
             interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
         } else {
-            console.log('Paused.');
+            pauseBtn.innerHTML = 'Play';
             clearInterval(interval);
         }
         paused = !paused;
