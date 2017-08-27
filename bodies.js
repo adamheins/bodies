@@ -179,17 +179,17 @@ function step(ctx, bodies) {
 
 
 function getBodies() {
-    let one = new Body('one', 20, 10, 'blue');
-    one.init(new Vector(100, 100),
+    let one = new Body('one', 10, 10, 'blue');
+    one.init(new Vector(350, 150),
              new Vector(20, 0));
 
-    let two = new Body('two', 5, 10, 'red');
-    two.init(new Vector(400, 400),
+    let two = new Body('two', 12, 12, 'red');
+    two.init(new Vector(350, 550),
              new Vector(-20, 0));
 
-    let three = new Body('three', 10, 10, 'green');
-    three.init(new Vector(400, 100),
-               new Vector(-5, 5));
+    let three = new Body('three', .1, 3, 'green');
+    three.init(new Vector(350, 350),
+               new Vector(0, 0));
 
     return [one, two, three];
 }
