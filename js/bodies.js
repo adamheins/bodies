@@ -1,62 +1,8 @@
 'use strict';
 
 
-let G = 100;
-let DT = 0.1; // seconds
-let DURATION = 20; // seconds
-
-
-class Vector {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    add(other) {
-        return new Vector(this.x + other.x, this.y + other.y);
-    }
-
-    subtract(other) {
-        return new Vector(this.x - other.x, this.y - other.y);
-    }
-
-    scale(scalar) {
-        return new Vector(this.x * scalar, this.y * scalar);
-    }
-
-    negate() {
-        return this.scale(-1);
-    }
-
-    square() {
-        return this.x * this.x + this.y * this.y;
-    }
-
-    magnitude() {
-        return Math.sqrt(this.square());
-    }
-
-    // fromPolar(mag, angle) {
-    //     return new Vector(mag * Math.sin(angle), mag * Math.cos(angle));
-    // }
-
-    unit() {
-        let mag = this.magnitude();
-        return new Vector(this.x / mag, this.y / mag);
-    }
-
-    dot(other) {
-        return this.x * other.x + this.y * other.y;
-    }
-
-    // String representation of the vector.
-    str(num_decimal_places = 2) {
-        let x = this.x.toFixed(num_decimal_places);
-        let y = this.y.toFixed(num_decimal_places);
-        return '(' + x + ', ' + y + ')';
-    }
-}
-
+let G = 100;  // Gravitational constant. In my simulation, I make the rules.
+let DT = 0.1; // Time step, in seconds.
 
 let VECTOR_ZERO = new Vector(0, 0);
 
@@ -82,7 +28,7 @@ class Body {
         this.path = [pos]; // Store all past and current positions here.
         this.pos = pos;
         this.vel = vel;
-        this.force = new Vector(0, 0);
+        this.force = VECTOR_ZERO;
     }
 
     // Update velocity and position in response to a force.
@@ -90,7 +36,13 @@ class Body {
         let a = this.force.scale(1 / this.mass);
         this.vel = this.vel.add(a.scale(DT));
         this.pos = this.pos.add(this.vel.scale(DT));
-        this.path.push(this.pos);
+
+        // Only add a new point to the path if it is reasonably distant from
+        // the last one.
+        let last = this.path[this.path.length - 1];
+        if (this.pos.subtract(last).square() > this.radius * this.radius) {
+            this.path.push(this.pos);
+        }
     }
 
     // Returns a new velocity.
@@ -130,10 +82,17 @@ function pairs(list, cb) {
 
 
 function render(ctx, bodies) {
+    // Clear the screen.
     ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
+
+    // Draw the paths.
+    bodies.forEach(body => {
+        body.drawPath(ctx);
+    });
+
+    // Draw the bodies.
     bodies.forEach(body => {
         body.draw(ctx);
-        body.drawPath(ctx);
     });
 }
 
@@ -161,10 +120,10 @@ function step(ctx, bodies) {
         } else {
             // Force of gravity.
             let dir = del.unit();
-            let F = dir.scale(-G * a.mass * b.mass / dist);
+            let force = dir.scale(-G * a.mass * b.mass / dist);
 
-            a.force = a.force.add(F);
-            b.force = b.force.add(F.negate());
+            a.force = a.force.add(force);
+            b.force = b.force.add(force.negate());
         }
     });
 
@@ -187,9 +146,9 @@ function getBodies() {
     two.init(new Vector(350, 550),
              new Vector(-20, 0));
 
-    let three = new Body('three', .1, 3, 'green');
-    three.init(new Vector(350, 350),
-               new Vector(0, 0));
+    let three = new Body('three', 0.05, 3, 'green');
+    three.init(new Vector(150, 350),
+               new Vector(-10, 10));
 
     return [one, two, three];
 }

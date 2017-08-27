@@ -3,7 +3,7 @@
     <meta charset="utf-8"/>
 
     <link rel="stylesheet" href="https://static.adamheins.com/css/bones.css"/>
-    <link rel="stylesheet" href="bodies.css"/>
+    <link rel="stylesheet" href="css/bodies.css"/>
 
     <title>Bodies</title>
   </head>
@@ -12,13 +12,16 @@
       <h1>BODIES</h2>
       <p>Bodies with simulated gravitational attraction and elastic collisions.</p>
 
-      <canvas id="gameCanvas" width="700" height="700"></canvas>
-
-      <div class="btnMenu">
-        <button id="pauseBtn">Pause</button>
-        <button id="resetBtn">Reset</button>
+      <!-- The simulation. -->
+      <div id="sim">
+        <canvas id="gameCanvas" width="700" height="700"></canvas>
+        <div class="btnMenu">
+          <button id="resetBtn">Reset</button>
+          <button id="pauseBtn">Pause</button>
+        </div>
       </div>
     </div>
-    <script src="bodies.js"></script>
+    <script src="js/vector.js"></script>
+    <script src="js/bodies.js"></script>
   </body>
 </html>
