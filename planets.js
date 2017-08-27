@@ -116,6 +116,14 @@ function pairs(list, cb) {
 }
 
 
+function render(ctx, bodies) {
+    ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight);
+    bodies.forEach(body => {
+        body.draw(ctx);
+    });
+}
+
+
 // Perform a step of the simulation.
 function step(ctx, bodies) {
     // Reset force on each body.
@@ -127,21 +135,18 @@ function step(ctx, bodies) {
     pairs(bodies, (a, b) => {
         let del = a.pos.subtract(b.pos);
         let dist = del.magnitude();
-        let dir = del.unit();
 
-        // Don't let bodies get too close.
-        let min_dist = a.radius + b.radius;
-        if (dist < min_dist) {
-            // Collision!
+        // Check for collision.
+        if (dist < a.radius + b.radius) {
+            // Elastic collision.
             let va = a.collide(b);
             let vb = b.collide(a);
 
             a.vel = va;
             b.vel = vb;
-
-            // dist = min_dist;
         } else {
             // Force of gravity.
+            let dir = del.unit();
             let F = dir.scale(-G * a.mass * b.mass / dist);
 
             a.force = a.force.add(F);
@@ -149,20 +154,17 @@ function step(ctx, bodies) {
         }
     });
 
-    ctx.clearRect(0, 0, 500, 500);
-
-    // Update positions and velocities, and draw.
+    // Update positions and velocities.
     bodies.forEach(body => {
         body.step();
-        body.draw(ctx);
     });
+
+    // Draw.
+    render(ctx, bodies);
 }
 
 
-function main() {
-    let canvas = document.getElementById('gameCanvas');
-    let ctx = canvas.getContext('2d');
-
+function getBodies() {
     let one = new Body('one', 20, 10, 'blue');
     one.init(new Vector(100, 100),
              new Vector(20, 0));
@@ -175,12 +177,22 @@ function main() {
     three.init(new Vector(400, 100),
                new Vector(-5, 5));
 
-    let bodies = [one, two, three];
+    return [one, two, three];
+}
+
+
+function main() {
+    let canvas = document.getElementById('gameCanvas');
+    let ctx = canvas.getContext('2d');
+
+    let bodies = getBodies();
 
     // Start the simulation.
     let interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
 
     let paused = false;
+
+    // Pause button.
     document.getElementById('pauseBtn').addEventListener('click', () => {
         if (paused) {
             console.log('Unpaused.');
@@ -190,6 +202,16 @@ function main() {
             clearInterval(interval);
         }
         paused = !paused;
+    }, false);
+
+    // Reset button.
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        clearInterval(interval);
+        bodies = getBodies();
+        render(ctx, bodies);
+        if (!paused) {
+            interval = setInterval(step.bind(null, ctx, bodies), DT * 1000);
+        }
     }, false);
 }
 
