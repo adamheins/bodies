@@ -4,7 +4,7 @@
 let G = 100;  // Gravitational constant. In my simulation, I make the rules.
 let DT = 0.1; // Time step, in seconds.
 
-let VECTOR_ZERO = new Vector(0, 0);
+const VECTOR_ZERO = [0, 0];
 
 
 // Convenience function for drawing a filled circle.
@@ -33,14 +33,14 @@ class Body {
 
     // Update velocity and position in response to a force.
     step() {
-        let a = this.force.scale(1 / this.mass);
-        this.vel = this.vel.add(a.scale(DT));
-        this.pos = this.pos.add(this.vel.scale(DT));
+        let acc = Vector.scale(this.force, 1 / this.mass);
+        this.vel = Vector.add(this.vel, Vector.scale(acc, DT));
+        this.pos = Vector.add(this.pos, Vector.scale(this.vel, DT));
 
         // Only add a new point to the path if it is reasonably distant from
         // the last one.
         let last = this.path[this.path.length - 1];
-        if (this.pos.subtract(last).square() > this.radius * this.radius) {
+        if (Vector.square(Vector.subtract(this.pos, last)) > this.radius * this.radius) {
             this.path.push(this.pos);
         }
     }
@@ -48,22 +48,22 @@ class Body {
     // Returns a new velocity.
     collide(other) {
         let m = 2 * other.mass / (this.mass + other.mass);
-        let dx = this.pos.subtract(other.pos);
-        let dx2 = dx.square();
-        let dv = this.vel.subtract(other.vel);
+        let dx = Vector.subtract(this.pos, other.pos);
+        let dx2 = Vector.square(dx);
+        let dv = Vector.subtract(this.vel, other.vel);
 
-        return this.vel.subtract(dx.scale(m * dv.dot(dx) / dx2));
+        return Vector.subtract(this.vel, Vector.scale(dx, m * Vector.dot(dv, dx) / dx2));
     }
 
     draw(ctx) {
-        fillCircle(ctx, this.pos.x, this.pos.y, this.radius, this.color);
+        fillCircle(ctx, this.pos[0], this.pos[1], this.radius, this.color);
     }
 
     drawPath(ctx) {
         ctx.beginPath();
-        ctx.moveTo(this.path[0].x, this.path[0].y);
+        ctx.moveTo(this.path[0][0], this.path[0][1]);
         this.path.slice(1).forEach(pos => {
-            ctx.lineTo(pos.x, pos.y);
+            ctx.lineTo(pos[0], pos[1]);
         });
         ctx.strokeStyle = this.color;
         ctx.stroke();
@@ -106,11 +106,11 @@ function step(ctx, bodies) {
 
     // Calculate new gravitational forces.
     pairs(bodies, (a, b) => {
-        let del = a.pos.subtract(b.pos);
-        let dist = del.magnitude();
+        let del = Vector.subtract(a.pos, b.pos);
+        let dist = Vector.norm2(del);
 
         // Check for collision.
-        if (dist < a.radius + b.radius) {
+        if (dist <= a.radius + b.radius) {
             // Elastic collision.
             let va = a.collide(b);
             let vb = b.collide(a);
@@ -119,11 +119,11 @@ function step(ctx, bodies) {
             b.vel = vb;
         } else {
             // Force of gravity.
-            let dir = del.unit();
-            let force = dir.scale(-G * a.mass * b.mass / dist);
+            let dir = Vector.normalize(del);
+            let force = Vector.scale(dir, -G * a.mass * b.mass / dist);
 
-            a.force = a.force.add(force);
-            b.force = b.force.add(force.negate());
+            a.force = Vector.add(a.force, force);
+            b.force = Vector.subtract(b.force, force);
         }
     });
 
@@ -139,16 +139,13 @@ function step(ctx, bodies) {
 
 function getBodies() {
     let one = new Body('one', 10, 10, 'blue');
-    one.init(new Vector(350, 150),
-             new Vector(20, 0));
+    one.init([350, 150], [20, 0]);
 
     let two = new Body('two', 12, 12, 'red');
-    two.init(new Vector(350, 550),
-             new Vector(-20, 0));
+    two.init([350, 550], [-20, 0]);
 
     let three = new Body('three', 0.05, 3, 'green');
-    three.init(new Vector(150, 350),
-               new Vector(-10, 10));
+    three.init([150, 350], [-12, 10]);
 
     return [one, two, three];
 }
