@@ -1,4 +1,4 @@
-# Bodies
+# Revolutions
 A simple simulation of bodies with gravitational attraction and elastic
 collisions.
 
@@ -10,4 +10,4 @@ If you want to play with this yourself, clone the repository and open the
 `index.html` file in a browser. To change the properties of the bodies, edit
 the code in the `getBodies` function.
 
-A demo can be found [here](https://adamheins.com/projects/bodies/).
+A demo can be found [here](https://adamheins.com/projects/revolutions/).
